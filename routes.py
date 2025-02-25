@@ -54,7 +54,7 @@ def cadastro():
     if not re.match(email_padrao, dados['email']):
         return jsonify({'Erro': 'Digite um E-mail válido'})
     
-    data_nascimento = datetime.strptime(dados['data_nascimento'], "%Y-%m-%d").date()
+    data_nascimento = datetime.strptime(dados['data_nascimento'], "%d-%m-%Y").date()
     
     
     estudante = Estudante(
