@@ -10,7 +10,6 @@ db.init_app(app)
 from models import Estudante, NotaDasMaterias
 
 with app.app_context():
-    
     db.create_all()
 
 import routes
