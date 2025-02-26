@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from __init__ import app
 import re
 from datetime import datetime
+import smtplib
 
 
 load_dotenv()
@@ -79,6 +80,8 @@ def cadastro():
 @app.route('/registromaterias', methods=['POST'])
 def cadastro_metrias():
     
+    lista_materias = ['nota_artes', 'nota_ciencias', 'nota_geografia', 'nota_historia', 'nota_portugues', 'nota_matematica', 'nota_ingles']
+
     dados = request.get_json()
 
     if not dados or 'email' not in dados or not dados['email']:
@@ -89,29 +92,14 @@ def cadastro_metrias():
     if not estudante:
         return jsonify({'Erro': 'Esse E-mail não foi cadastrado no nosso sistema'})
     
-    if not dados or 'nota_artes' not in dados or not dados['nota_artes']:
-        return jsonify({'Erro': 'Digite a nota de artes para continuar...'})
     
-    if not dados or 'nota_ciencias' not in dados or not dados['nota_ciencias']:
-        return jsonify({'Erro': 'Digite a nota de ciencias para continuar...'})
-    
-    if not dados or 'nota_geografia' not in dados or not dados['nota_geografia']:
-        return jsonify({'Erro': 'Digite a nota de geografia para continuar...'})
-    
-    if not dados or 'nota_historia' not in dados or not dados['nota_historia']:
-        return jsonify({'Erro': 'Digite a nota de historia para continuar...'})
-    
-    if not dados or 'nota_portugues' not in dados or not dados['nota_portugues']:
-        return jsonify({'Erro': 'Digite a nota de português para continuar...'})
-    
-    if not dados or 'nota_matematica' not in dados or not dados['nota_matematica']:
-        return jsonify({'Erro': 'Digite a nota de matemática para continuar...'})
-    
-    if not dados or 'nota_ingles' not in dados or not dados['nota_ingles']:
-        return jsonify({'Erro': 'Digite a nota de inglês para continuar...'})
+    for materia in lista_materias:
+        if not dados or materia not in dados or not dados[materia]:
+            return jsonify({'Erro': 'Digite a nota de todas materias para continuar...'})
+
     
     media = (dados['nota_artes'] + dados['nota_ciencias'] + dados['nota_geografia'] + dados['nota_historia'] + dados['nota_portugues'] + dados['nota_matematica'] + dados['nota_ingles']) / 7
-    media_formatada = f'{media:.2f}'
+    media_formatada = f'{media:.1f}'
 
 
     nota_das_materias = NotaDasMaterias(
@@ -129,6 +117,95 @@ def cadastro_metrias():
                         media_final=media_formatada
         
                     )
+    
+    if media >= 6:
+        
+        smtp_server = 'smtp.gmail.com'
+        smtp_port = 587
+        sender_email = os.environ["email"]
+        sender_password = os.environ["senha_app"]
+
+        # Compondo o e-mail
+        msg = MIMEMultipart()
+        msg['Subject'] = 'Parabéns! Você foi aprovado na nossa escola!'
+        msg['From'] = sender_email
+        msg['To'] = dados['email']
+
+        html = f"""
+                <html>
+                <body style="font-family: Arial">
+                    <h1 style="color: blue;">Olá {nota_das_materias.nome},</h1>
+                    <h2>Espero que esta mensagem te encontre bem. Tenho o prazer de informar que você foi aprovado na nossa escola! Parabéns pela sua conquista. Estamos muito empolgados em tê-lo como parte da nossa comunidade.</h2>
+                    <b><h3>Detalhes da Aprovação:</h3></b>
+                    <ul>
+                        <li><b>Nome:</b>{nota_das_materias.nome}</li>
+                        <li><b>Data da Aprovação:</b> {datetime.today()}</li>
+                        <li><b>Curso/Programa:</b> Ensino Médio</li>
+                    </ul>
+                    <h3>A sua aprovação é um reflexo do seu esforço e dedicação, e estamos ansiosos para te ajudar a alcançar todos os seus objetivos acadêmicos e pessoais.</h3>
+                    <h3>Por favor, fique atento ao seu e-mail para mais informações sobre o processo de matrícula, horários das aulas e outras orientações importantes. Se você tiver qualquer dúvida, não hesite em entrar em contato conosco.</h3>
+                    <h4>Agradecemos pela sua atenção e estamos à disposição para qualquer dúvida.</a></h4>
+                    <p style="color: gray;">Atenciosamente, Sistema</p>
+                </body>
+                </html>
+            """
+
+        msg.attach(MIMEText(html, 'html'))
+
+        try:
+            with smtplib.SMTP(smtp_server, smtp_port) as smtp:
+                smtp.starttls()
+                smtp.login(sender_email, sender_password)
+                smtp.send_message(msg)
+                print('Email Enviado com Sucesso')
+
+        except:
+            print('Erro ao envio do E-mail')
+    
+    else:
+        smtp_server = 'smtp.gmail.com'
+        smtp_port = 587
+        sender_email = os.environ["email"]
+        sender_password = os.environ["senha_app"]
+
+        # Compondo o e-mail
+        msg = MIMEMultipart()
+        msg['Subject'] = 'Atualização sobre sua situação acadêmica'
+        msg['From'] = sender_email
+        msg['To'] = dados['email']
+
+        html = f"""
+                <html>
+                <body style="font-family: Arial">
+                    <h1 style="color: blue;">Olá {nota_das_materias.nome},</h1>
+                    <h2>Espero que esta mensagem te encontre bem. Gostaríamos de informar que, após a análise de suas notas, você não atingiu a média necessária para ser aprovado este ano. Sabemos que essa notícia pode ser decepcionante, mas estamos aqui para apoiar você e ajudá-lo a seguir em frente.</h2>
+                    <b><h3>Detalhes da Reprovação:</h3></b>
+                    <ul>
+                        <li><b>Nome:</b>{nota_das_materias.nome}</li>
+                        <li><b>Data da Atualização:</b> {datetime.today()}</li>
+                        <li><b>Curso/Programa:</b> Ensino Médio</li>
+                    </ul>
+                    <h3>Apesar dessa adversidade, acreditamos no seu potencial e estamos prontos para oferecer todo o suporte necessário para que você possa superar esses desafios e alcançar seus objetivos acadêmicos e pessoais.</h3>
+                    <h3>Por favor, fique atento ao seu e-mail para mais informações sobre as opções disponíveis, como recuperação de notas, aulas de reforço, e orientações importantes. Se você tiver qualquer dúvida ou precisar de suporte, não hesite em entrar em contato conosco.</h3>
+                    <h4>Agradecemos pela sua atenção e estamos à disposição para qualquer dúvida.</a></h4>
+                    <p style="color: gray;">Atenciosamente, Sistema</p>
+                </body>
+                </html>
+            """
+
+        msg.attach(MIMEText(html, 'html'))
+
+        try:
+            with smtplib.SMTP(smtp_server, smtp_port) as smtp:
+                smtp.starttls()
+                smtp.login(sender_email, sender_password)
+                smtp.send_message(msg)
+                print('Email Enviado com Sucesso')
+
+        except:
+            print('Erro ao envio do E-mail')
+    
+
     try:
         db.session.add(nota_das_materias)
         db.session.commit()
@@ -137,5 +214,7 @@ def cadastro_metrias():
     except Exception as e:
         print(f'Erro: {e}')
         return jsonify({'Erro': f'{e}'})
+
+    
     
     
