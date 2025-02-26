@@ -13,7 +13,7 @@ from datetime import datetime
 
 load_dotenv()
 
-@app.route("/cadastro", methods=['POST'])
+@app.route("/registro", methods=['POST'])
 def cadastro():
     dados = request.get_json()
 
@@ -58,6 +58,7 @@ def cadastro():
     
     
     estudante = Estudante(
+        
         nome = dados['nome'],
         cpf = dados['cpf'],
         data_nascimento = data_nascimento,
@@ -75,4 +76,66 @@ def cadastro():
         return jsonify({'Erro': f'{e}'})
         
 
+@app.route('/registromaterias', methods=['POST'])
+def cadastro_metrias():
+    
+    dados = request.get_json()
+
+    if not dados or 'email' not in dados or not dados['email']:
+        return jsonify({'Erro': 'Digite o E-mail do aluno para continuar...'})
+
+    estudante = Estudante.query.filter_by(email=dados['email']).first()
+
+    if not estudante:
+        return jsonify({'Erro': 'Esse E-mail não foi cadastrado no nosso sistema'})
+    
+    if not dados or 'nota_artes' not in dados or not dados['nota_artes']:
+        return jsonify({'Erro': 'Digite a nota de artes para continuar...'})
+    
+    if not dados or 'nota_ciencias' not in dados or not dados['nota_ciencias']:
+        return jsonify({'Erro': 'Digite a nota de ciencias para continuar...'})
+    
+    if not dados or 'nota_geografia' not in dados or not dados['nota_geografia']:
+        return jsonify({'Erro': 'Digite a nota de geografia para continuar...'})
+    
+    if not dados or 'nota_historia' not in dados or not dados['nota_historia']:
+        return jsonify({'Erro': 'Digite a nota de historia para continuar...'})
+    
+    if not dados or 'nota_portugues' not in dados or not dados['nota_portugues']:
+        return jsonify({'Erro': 'Digite a nota de português para continuar...'})
+    
+    if not dados or 'nota_matematica' not in dados or not dados['nota_matematica']:
+        return jsonify({'Erro': 'Digite a nota de matemática para continuar...'})
+    
+    if not dados or 'nota_ingles' not in dados or not dados['nota_ingles']:
+        return jsonify({'Erro': 'Digite a nota de inglês para continuar...'})
+    
+    media = (dados['nota_artes'] + dados['nota_ciencias'] + dados['nota_geografia'] + dados['nota_historia'] + dados['nota_portugues'] + dados['nota_matematica'] + dados['nota_ingles']) / 7
+    media_formatada = f'{media:.2f}'
+
+
+    nota_das_materias = NotaDasMaterias(
+                        
+                        id_usuario=estudante.id,
+                        nome=estudante.nome,
+                        email=dados['email'],
+                        nota_artes=dados['nota_artes'],
+                        nota_ciencias=dados['nota_ciencias'],
+                        nota_geografia=dados['nota_geografia'],
+                        nota_historia=dados['nota_historia'],
+                        nota_portugues=dados['nota_portugues'],
+                        nota_matematica=dados['nota_matematica'],
+                        nota_ingles=dados['nota_ingles'],
+                        media_final=media_formatada
+        
+                    )
+    try:
+        db.session.add(nota_das_materias)
+        db.session.commit()
+        return jsonify({'Sucesso': 'Informações adicionadas ao Banco de Dados!'})
+    
+    except Exception as e:
+        print(f'Erro: {e}')
+        return jsonify({'Erro': f'{e}'})
+    
     
