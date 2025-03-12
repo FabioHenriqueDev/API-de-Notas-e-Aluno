@@ -100,8 +100,7 @@ def cadastro_metrias():
     
     media = (dados['nota_artes'] + dados['nota_ciencias'] + dados['nota_geografia'] + dados['nota_historia'] + dados['nota_portugues'] + dados['nota_matematica'] + dados['nota_ingles']) / 7
     media_formatada = f'{media:.1f}'
-
-
+    
     nota_das_materias = NotaDasMaterias(
                         
                         id_usuario=estudante.id,
@@ -217,4 +216,38 @@ def cadastro_metrias():
 
     
     
+@app.route('/atualizarinfo', methods=['PUT'])
+def atualizar_info():
+    dados = request.get_json()
+    lista_materias = ['nota_artes', 'nota_ciencias', 'nota_geografia', 'nota_historia', 'nota_portugues', 'nota_matematica', 'nota_ingles']
+    
+    if not dados or 'email' not in dados or not dados['email']:
+        return jsonify({'Erro': 'Digite o email cadastrado...'}), 400
+    
+
+    for materia in lista_materias:
+        if not dados or materia not in dados or not dados[materia]:
+            return jsonify({'Erro': 'Digite a nota de todas materias para atualizar...'})
+
+    estudante = NotaDasMaterias.query.filter_by(email=dados["email"]).first()
+
+    if not estudante:
+        return jsonify({'Erro': "Estudante não encontrado"})
+
+    
+   
+    try:
+        estudante.nota_artes = dados["nota_artes"]
+        estudante.nota_ciencias = dados["nota_ciencias"]
+        estudante.nota_geografia = dados["nota_geografia"]
+        estudante.nota_historia = dados["nota_historia"]
+        estudante.nota_portugues = dados["nota_portugues"]
+        estudante.nota_matematica = dados["nota_matematica"]
+        estudante.nota_ingles = dados["nota_ingles"]
+        db.session.commit()
+        return jsonify({'Sucesso': 'Informações atualizadas!'})
+        
+    
+    except Exception as e:
+        return jsonify({'Erro': f'{e}'})
     
